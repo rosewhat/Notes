@@ -1,3 +1,6 @@
 <resources>
     <string name="app_name">Notes</string>
+    <string name="item_info_name">Name</string>
+    <string name="item_info_count">Count</string>
+    <string name="button_save">Save</string>
 </resources>
