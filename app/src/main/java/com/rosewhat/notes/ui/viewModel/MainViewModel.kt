@@ -1,4 +1,4 @@
-package com.rosewhat.notes.ui
+package com.rosewhat.notes.ui.viewModel
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel

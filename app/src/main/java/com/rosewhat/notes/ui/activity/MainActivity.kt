@@ -1,17 +1,14 @@
-package com.rosewhat.notes.ui
+package com.rosewhat.notes.ui.activity
 
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.util.Log
-import android.view.View
+import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
-import com.rosewhat.notes.R
 import com.rosewhat.notes.databinding.ActivityMainBinding
-import com.rosewhat.notes.domain.models.InfoItem
 import com.rosewhat.notes.ui.adapters.InfoListAdapter
+import com.rosewhat.notes.ui.viewModel.MainViewModel
 
 class MainActivity : AppCompatActivity() {
 
@@ -22,13 +19,17 @@ class MainActivity : AppCompatActivity() {
     private lateinit var infoAdapter: InfoListAdapter
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
+        setContentView(binding.root)
         setupRecyclerView()
         viewModel = ViewModelProvider(this)[MainViewModel::class.java]
         viewModel.infoList.observe(this, Observer {
             // новый поток с вычислениями
             infoAdapter.submitList(it)
         })
+        binding.buttonAddInfoList.setOnClickListener {
+            val intent = InfoItemActivity.newIntentAddItem(this)
+            startActivity(intent)
+        }
     }
 
     private fun setupRecyclerView() {
@@ -53,7 +54,8 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupClickListener() {
         infoAdapter.onInfoItemClickListener = {
-            TODO("Next Fragment")
+            val intent = InfoItemActivity.newIntentEditITem(this, it.id)
+            startActivity(intent)
         }
     }
 
