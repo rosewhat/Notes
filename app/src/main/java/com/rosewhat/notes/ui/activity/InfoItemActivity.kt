@@ -4,120 +4,58 @@ import android.content.Context
 import android.content.Intent
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
+import android.service.controls.templates.TemperatureControlTemplate.MODE_UNKNOWN
 import android.text.Editable
 import android.text.TextWatcher
 import androidx.lifecycle.ViewModelProvider
+import com.rosewhat.notes.R
 import com.rosewhat.notes.databinding.ActivityInfoItemBinding
 import com.rosewhat.notes.domain.models.InfoItem
 import com.rosewhat.notes.ui.viewModel.InfoItemViewModel
 import java.lang.RuntimeException
 
-class InfoItemActivity : AppCompatActivity() {
-    private val binding by lazy {
-        ActivityInfoItemBinding.inflate(layoutInflater)
-    }
+class InfoItemActivity : AppCompatActivity(), InfoItemFragment.OnEditingFinishedListener {
+
     private lateinit var viewModel: InfoItemViewModel
     private var screenMode = MODE_UNKNOWN
     private var screenModeId = InfoItem.UNDEFINED_ID
+
+
+    private val binding by lazy {
+        ActivityInfoItemBinding.inflate(layoutInflater)
+    }
+
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
-        parseIntent()
-        viewModel = ViewModelProvider(this)[InfoItemViewModel::class.java]
-        addTextChangeListeners()
-        launchRightMode()
-        observeViewModel()
-    }
-
-    private fun observeViewModel() {
-        viewModel.errorInputCount.observe(this) {
-            val message = if (it) {
-                "Error"
-            } else {
-                null
-            }
-            binding.tilCount.error = message
+        if (savedInstanceState == null) {
+            launchRightMode()
         }
 
-        viewModel.errorInputName.observe(this) {
-            val message = if (it) {
-                "Error"
-            } else {
-                null
-            }
-            binding.tilName.error = message
-        }
-        viewModel.shouldCloseScreen.observe(this) {
-            finish()
-        }
+
+
+
+
     }
+
+    override fun editingFinished() {
+        TODO("Not yet implemented")
+        finish()
+    }
+
+    // parseIntent()
 
     private fun launchRightMode() {
-        when (screenMode) {
-            MODE_EDIT -> launchEditMode()
-            MODE_ADD -> launchAddMode()
+        val fragment = when (screenMode) {
+            MODE_EDIT -> InfoItemFragment.newInstanceEditItem(screenModeId)
+            MODE_ADD  -> InfoItemFragment.newInstanceAddItem()
+            else      -> throw RuntimeException("Unknown screen mode $screenMode")
+
         }
-    }
-
-    private fun addTextChangeListeners() {
-        binding.etName.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                viewModel.resetErrorInputName()
-            }
-
-            override fun afterTextChanged(s: Editable?) {}
-        })
-
-        binding.etCount.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
-
-            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) {
-                viewModel.resetErrorInputCount()
-            }
-
-            override fun afterTextChanged(s: Editable?) {}
-        })
-    }
-
-    private fun launchEditMode() {
-
-        viewModel.getInfoItem(screenModeId)
-        viewModel.infoItem.observe(this) {
-            binding.etName.setText(it.name)
-            binding.etCount.setText(it.count.toString())
-        }
-        binding.buttonInfoSave.setOnClickListener {
-            viewModel.editInfoItem(
-                binding.etName.text?.toString(),
-                binding.etCount.text?.toString()
-            )
-        }
-    }
-
-    private fun launchAddMode() {
-        binding.buttonInfoSave.setOnClickListener {
-            viewModel.addInfoItem(binding.etName.text?.toString(), binding.etCount.text?.toString())
-        }
-    }
-
-    private fun parseIntent() {
-        if (!intent.hasExtra(EXTRA_SCREEN_MODE)) {
-            throw RuntimeException("Screen mode is absent")
-        }
-        val mode = intent.getStringExtra(EXTRA_SCREEN_MODE)
-        if (mode != MODE_EDIT && mode != MODE_ADD) {
-            throw RuntimeException("Unknown screen mode")
-        }
-        screenMode = mode
-        if (screenMode == MODE_EDIT) {
-            if (!intent.hasExtra(EXTRA_INFO_ITEM_ID)) {
-                throw RuntimeException("item id is absent")
-            }
-            screenModeId = intent.getIntExtra(EXTRA_INFO_ITEM_ID, InfoItem.UNDEFINED_ID)
-        }
-
+        supportFragmentManager.beginTransaction()
+            .replace(R.id.info_item_container, fragment)
+            .commit()
     }
 
     companion object {
