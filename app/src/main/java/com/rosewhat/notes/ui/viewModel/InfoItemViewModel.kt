@@ -1,22 +1,26 @@
 package com.rosewhat.notes.ui.viewModel
 
+import android.app.Application
+import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.rosewhat.notes.data.InfoListRepositoryImpl
 import com.rosewhat.notes.domain.models.InfoItem
 import com.rosewhat.notes.domain.repository.InfoListRepository
 import com.rosewhat.notes.domain.usecases.AddInfoItemUseCase
 import com.rosewhat.notes.domain.usecases.EditInfoItemUseCase
 import com.rosewhat.notes.domain.usecases.GetInfoItemUseCase
+import kotlinx.coroutines.launch
 
-class InfoItemViewModel : ViewModel() {
+class InfoItemViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val repository: InfoListRepository = InfoListRepositoryImpl
+    private val repository: InfoListRepository = InfoListRepositoryImpl(application)
 
     private val getInfoItemUseCase = GetInfoItemUseCase(infoListRepository = repository)
     private val addInfoItemUseCase = AddInfoItemUseCase(infoListRepository = repository)
     private val editInfoItemUseCase = EditInfoItemUseCase(infoListRepository = repository)
+
 
     private val _errorInputName = MutableLiveData<Boolean>()
     val errorInputName: LiveData<Boolean>
@@ -35,7 +39,9 @@ class InfoItemViewModel : ViewModel() {
         get() = _shouldCloseScreen
 
     fun getInfoItem(infoItemId: Int) {
-        _infoItem.value = getInfoItemUseCase.getInfoItem(infoItemId)
+        viewModelScope.launch {
+            _infoItem.value = getInfoItemUseCase.getInfoItem(infoItemId)
+        }
     }
 
     fun addInfoItem(inputName: String?, inputCount: String?) {
@@ -43,9 +49,12 @@ class InfoItemViewModel : ViewModel() {
         val count = parseCount(inputCount)
         val fieldsValid = validateInput(name, count)
         if (fieldsValid) {
-            val infoItem = InfoItem(name = name, count = count, enabled = true)
-            addInfoItemUseCase.addInfoItem(infoItem)
-            finishWork()
+            viewModelScope.launch {
+                val infoItem = InfoItem(name = name, count = count, enabled = true)
+                addInfoItemUseCase.addInfoItem(infoItem)
+                finishWork()
+            }
+
         }
     }
 
@@ -55,9 +64,12 @@ class InfoItemViewModel : ViewModel() {
         val fieldsValid = validateInput(name, count)
         if (fieldsValid) {
             _infoItem.value?.let {
-                val item = it.copy(name = name, count = count)
-                editInfoItemUseCase.editInfoItem(item)
-                finishWork()
+                viewModelScope.launch {
+                    val item = it.copy(name = name, count = count)
+                    editInfoItemUseCase.editInfoItem(item)
+                    finishWork()
+                }
+
             }
 
         }
@@ -90,17 +102,18 @@ class InfoItemViewModel : ViewModel() {
         return result
     }
 
-     fun resetErrorInputName() {
+    fun resetErrorInputName() {
         _errorInputName.value = false
     }
 
-     fun resetErrorInputCount() {
+    fun resetErrorInputCount() {
         _errorInputCount.value = false
     }
 
     private fun finishWork() {
         _shouldCloseScreen.value = Unit
     }
+
 
     companion object {
         private const val DEFAULT_COUNT = 0

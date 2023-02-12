@@ -5,7 +5,7 @@ import com.rosewhat.notes.domain.repository.InfoListRepository
 
 class EditInfoItemUseCase(private val infoListRepository: InfoListRepository) {
 
-    fun editInfoItem(infoItem: InfoItem) {
+    suspend fun editInfoItem(infoItem: InfoItem) {
         infoListRepository.editInfoItem(infoItem = infoItem)
     }
 }
