@@ -1,46 +1,42 @@
 package com.rosewhat.notes.data
 
+import android.app.Application
 import androidx.lifecycle.LiveData
+import androidx.lifecycle.MediatorLiveData
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import com.rosewhat.notes.domain.models.InfoItem
 import com.rosewhat.notes.domain.repository.InfoListRepository
 import java.lang.RuntimeException
 
-object InfoListRepositoryImpl : InfoListRepository {
-    private val infoList = mutableListOf<InfoItem>()
-    private val infoListLD = MutableLiveData<List<InfoItem>>()
+class InfoListRepositoryImpl(application: Application) : InfoListRepository {
 
+    private val infoListDao = AppDatabase.getInstance(application).infoListDao()
+    private val mapper = InfoListMapper()
 
-    private var autoIncrementId = 0
 
     override fun addInfoItem(infoItem: InfoItem) {
-        if (infoItem.id == InfoItem.UNDEFINED_ID) {
-            infoItem.id = autoIncrementId++
-        }
-        infoList.add(infoItem)
-        updateList()
+        infoListDao.addInfoItem(mapper.mapEntityToDbModel(infoItem))
     }
 
     override fun deleteInfoItem(itemInfo: InfoItem) {
-        infoList.remove(itemInfo)
+        infoListDao.deleteInfoItem(itemInfo.id)
     }
 
     override fun editInfoItem(infoItem: InfoItem) {
-        val oldElement = getInfoItem(infoItem.id)
-        infoList.remove(oldElement)
-        addInfoItem(infoItem)
+        // заменяет объект replace
+        infoListDao.addInfoItem(mapper.mapEntityToDbModel(infoItem))
     }
 
     override fun getInfoItem(infoItem: Int): InfoItem {
-        return infoList.find {
-            it.id == infoItem
-        } ?: throw RuntimeException("No item $infoItem")
+        val dbModel = infoListDao.getInfoItem(infoItem)
+        return mapper.mapDbModelToEntity(dbModel)
     }
 
-    override fun getInfoList(): LiveData<List<InfoItem>> {
-        return infoListLD
+    override fun getInfoList(): LiveData<List<InfoItem>> = Transformations.map(
+        infoListDao.getInfoList()
+    ) {
+        mapper.mapListDbModelToListEntity(it)
     }
-    private fun updateList() {
-        infoListLD.value = infoList.toList()
-    }
+
 }

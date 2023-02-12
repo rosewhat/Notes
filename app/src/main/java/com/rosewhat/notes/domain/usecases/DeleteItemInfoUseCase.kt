@@ -5,7 +5,7 @@ import com.rosewhat.notes.domain.repository.InfoListRepository
 
 class DeleteItemInfoUseCase(private val infoListRepository: InfoListRepository) {
 
-    fun deleteInfoItem(infoItem: InfoItem) {
+    suspend fun deleteInfoItem(infoItem: InfoItem) {
         infoListRepository.deleteInfoItem(infoItem = infoItem)
     }
 }
